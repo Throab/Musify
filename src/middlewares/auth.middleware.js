@@ -3,11 +3,43 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { APIError } from "../utils/apiError.js";
 
+// export const verifyJWT = asyncHandler(async (req, res, next) => {
+//   try {
+//     const accessToken =
+//       req.cookies?.accessToken ||
+//       req.header("Authorization")?.replace("Bearer ", ""); // for mobile appln
+
+//     if (!accessToken) {
+//       throw new APIError(401, "Access Token Required");
+//     }
+
+//     const decodedToken = jwt.verify(
+//       accessToken,
+//       process.env.ACCESS_TOKEN_SECRET
+//     );
+
+//     const user = await User.findById(decodedToken?._id).select(
+//       "-password -refreshToken"
+//     );
+//     if (!user) {
+//       throw new APIError(404, "user not found");
+//     }
+//     req.user = user;
+//     next();
+//   } catch (error) {
+//     throw new APIError(401, "Invalid Access Token");
+//   }
+// });
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   try {
     const accessToken =
-      req.cookies?.accessToken ||
-      req.header("Authorization")?.replace("Bearer ", ""); // for mobile appln
+      req.header("Authorization")?.replace("Bearer ", "") ||
+      req.cookies?.accessToken;
+
+    console.log("===== AUTH DEBUG =====");
+    console.log("Authorization:", req.header("Authorization"));
+    console.log("Cookie:", req.headers.cookie);
+    console.log("AccessToken exists:", !!accessToken);
 
     if (!accessToken) {
       throw new APIError(401, "Access Token Required");
@@ -18,15 +50,20 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
       process.env.ACCESS_TOKEN_SECRET
     );
 
+    console.log("JWT decoded:", decodedToken);
+
     const user = await User.findById(decodedToken?._id).select(
       "-password -refreshToken"
     );
+
     if (!user) {
       throw new APIError(404, "user not found");
     }
+
     req.user = user;
     next();
   } catch (error) {
+    console.error("AUTH ERROR:", error);
     throw new APIError(401, "Invalid Access Token");
   }
 });
